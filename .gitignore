@@ -1,0 +1,7 @@
+MMLU/*
+# exception for MMLU/runthis.sh
+!MMLU/runthis.sh
+
+# python cache and jupyter notebook checkpoints
+.ipynb_checkpoints/
+__pycache__/
