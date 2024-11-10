@@ -1,0 +1,1 @@
+from ._MMLU import load_mmlu_to_ram
