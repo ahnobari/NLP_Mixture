@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, pipeline
 import torch
 
 def load_model_and_tokenizer(model_name = "google/gemma-2b-it"):
@@ -9,10 +9,9 @@ def load_model_and_tokenizer(model_name = "google/gemma-2b-it"):
                                               trust_remote_code=True,
                                               )
     model = AutoModelForCausalLM.from_pretrained(model_name,
-                                                torch_dtype = torch.float16,
+                                                torch_dtype = torch.bfloat16,
                                                 load_in_8bit=False,
                                                 trust_remote_code=True)
-    
     model.to(device)
     model.eval()
     

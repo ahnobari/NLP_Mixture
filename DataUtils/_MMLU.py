@@ -47,7 +47,7 @@ def load_mmlu_to_ram(data_path = './MMLU', choices = ["A", "B", "C", "D"], n_exa
                 prompt += f"\n{choices[j]}. {test_df[i][j+1]}"
 
             prompt += f"\nAnswer: "
-            test_prompts[-1].append([prompt, f"{test_df[i][n_choices+1]}\n\n"])
+            test_prompts[-1].append([prompt, f"{test_df[i][n_choices+1]}"])
             
         
         dev_data.append(dev_df)
