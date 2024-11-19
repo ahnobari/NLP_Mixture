@@ -1,0 +1,33 @@
+Pretrained:
+  - HF_Repo: "meta-llama/Llama-3.1-8B"
+Instruct:
+  - HF_Repo: "meta-llama/Llama-3.1-8B-Instruct"
+Checkpoints:
+  - 0:
+    - HF_Repo: "nvidia/OpenMath2-Llama3.1-8B"
+  - 1:
+    - HF_Repo: "WhiteRabbitNeo/Llama-3.1-WhiteRabbitNeo-2-8B"
+  - 2:
+    - HF_Repo: "ahmeterdempmk/Llama-3.1-8B-Fast-Food-Based-Tuned"
+  - 3:
+    - HF_Repo: "Magpie-Align/Llama-3.1-8B-Magpie-Align-SFT-v0.2"
+  - 4:
+    - HF_Repo: "tanliboy/zephyr-llama-3-8b-sft"
+  - 5:
+    - HF_Repo: "tohur/natsumura-assistant-1.1-llama-3.1-8b"
+  - 6:
+    - HF_Repo: "Syed-Hasan-8503/Llama-3.1-8b-BAdam"
+  - 7:
+    - HF_Repo: "yitzshapiro/brochat-meta-llama-31-8b"
+  - 8:
+    - HF_Repo: "allenai/llama-3.1-tulu-2-8b"
+  - 9:
+    - HF_Repo: "markrodrigo/Llama-3.1-8B-Instruct-Spatial-SQL-1.0"
+  - 10:
+    - HF_Repo: "KoboldAI/LLaMA-3.1-8B-Infinity3M-Kobo"
+  - 11:
+    - HF_Repo: "Niansuh/Hermes-3-Llama-3.1-8B"
+  - 12:
+    - HF_Repo: "rishitdass/Youtube-Video-Summarizer"
+  - 13:
+    - HF_Repo: "passthepizza/NarrativAI-Reflection"
