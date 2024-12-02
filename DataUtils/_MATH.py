@@ -1,8 +1,9 @@
 import json
+from vllm import SamplingParams
 
 problem_prompt = (
-    "You will be given instructions that describes a task. Write a response that appropriately completes the request. Think step by step. Decorate the final answer with \\boxed{}",
-    "Below is an instruction that describes a task. Write a response that appropriately completes the request. Think step by step. Decorate the final answer with \\boxed{}",
+    "Decorate the answer with \\boxed{} and do not explain just give a final answer.",
+    "Below is an instruction that describes a task. Write a response that appropriately completes the request. Think step by step but be concise. Decorate the final answer with \\boxed{}",
     "### Instruction:\n{instruction}\n\n### Response: Let's think step by step."
 )
 
@@ -20,14 +21,10 @@ def get_test_data_chat_template(jsonl_path='./MATH/MATH_test.jsonl'):
     for i in range(len(data)):
         instr = data[i]['instruction']
         inputs.append([])
-        inputs[-1].append({"role": "system", "content": problem_prompt[0]})
+        # inputs[-1].append({"role": "system", "content": problem_prompt[0]})
         inputs[-1].append({"role": "user", "content": data[i]['instruction']})
         response = data[i]['output']
-        
-        # extract what is inside \boxed{}
-        #response = response.split("\\boxed{")
-        #response = response[1][:-1] #I'm assuming } is the last char, we need to fix this later.
-        #response = response[0]
+
         response = extract_answer(response)
         Answers.append(response)
 
@@ -46,9 +43,6 @@ def get_test_data_plain(jsonl_path='./MATH/MATH_test.jsonl'):
         inputs.append(prompt)
         
         response = data[i]['output']
-        #response = response.split("\\boxed{")
-        #response = response[1] #I'm assuming } is the last char, we need to fix this later.
-        #response = response[0]
         response = extract_answer(response)
         Answers.append(response)
 
@@ -58,18 +52,16 @@ def extract_answers(responses):
     return [extract_answer(response) for response in responses]
 
 
-def get_input_kwargs(tokenizer, choices = ["A", "B", "C", "D"]):
-    
-    for i in range(len(choices)):
-        choices[i] = problem_prompt[-1].format(answer=choices[i])
+def get_input_kwargs(tokenizer):
         
-    force_words_ids = [tokenizer(choices, add_special_tokens=False).input_ids]
-    max_new_tokens = 500
-    num_beams = 2
+    force_words_ids = [tokenizer(["\\boxed"], add_special_tokens=False).input_ids]
+    max_new_tokens = 1024
+    num_beams = 5
     do_sample = False
-    top_p = 0.9
+    top_p = 1.0
+    temperature = 0.0
     
-    return {"max_new_tokens": max_new_tokens, "num_beams": num_beams, "do_sample": do_sample, "top_p": top_p}
+    return {"max_new_tokens": max_new_tokens, "do_sample": do_sample, "num_beams": num_beams, "top_p": top_p, "temperature": temperature, "force_words_ids": force_words_ids}
 
 def find_first_unopened_closing_brace(a):
     x = 0
@@ -87,3 +79,6 @@ def extract_answer(response):
     a = response.split("\\boxed{")[-1]
     a = find_first_unopened_closing_brace(a)
     return a
+
+def get_sampling_params():
+    return SamplingParams(n=1, temperature=0.0, max_tokens=1024, top_p=1.0, stop=['</s>', '\n\n---', '```output'])

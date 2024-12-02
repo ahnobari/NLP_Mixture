@@ -3,22 +3,23 @@ import numpy as np
 import os
 
 problem_prompt = (
-    "You will be given multiple choice questions about {subject}.\n\n Here are some examples:\n\n{examples}Respond with a clear answer to the multiple choice question decorated in \\boxed{{}} only. The answer will only be extracted from \\boxed{{}}. Anything outside \\boxed{{}} will be IGNORED.",
+    "You will be given multiple choice questions about {subject}.\n\n Here are some examples:\n\n{examples}Respond with a clear answer to the multiple choice question clearly stating A, B, C, or D.",
     "The following are multiple choice questions (with answers) about {subject}.\n\n{examples}",
-    "Answer: \\boxed{{{answer}}}",
-    "\\boxed{{{answer}}}"
+    "Answer: {answer}",
+    "{answer}"
 )
 
 def get_input_kwargs(tokenizer, choices = ["A", "B", "C", "D"]):
     
+    ch = choices.copy()
     for i in range(len(choices)):
-        choices[i] = problem_prompt[-1].format(answer=choices[i])
+        ch[i] = problem_prompt[-1].format(answer=choices[i])
         
-    force_words_ids = [tokenizer(choices, add_special_tokens=False).input_ids]
+    force_words_ids = [tokenizer(ch, add_special_tokens=False).input_ids]
     max_new_tokens = 8
-    num_beams = 2
+    num_beams = 4
     do_sample = False
-    top_p = 0.9
+    top_p = 1.0
     
     return {"force_words_ids": force_words_ids, "max_new_tokens": max_new_tokens, "num_beams": num_beams, "do_sample": do_sample, "top_p": top_p}
 
