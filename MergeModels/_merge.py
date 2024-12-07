@@ -2,9 +2,9 @@ import argparse
 import logging
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 
-from model_merging_methods.merging_methods import MergingMethod
-from utils.utils import set_random_seed, align_tokenizers_and_embeddings
-from utils.load_config import cache_dir
+from .model_merging_methods.merging_methods import MergingMethod
+from .utils.utils import set_random_seed, align_tokenizers_and_embeddings
+from .utils.load_config import cache_dir
 
 def get_default_args(models_to_merge, pretrained_model_name, **kwargs):
     parser = argparse.ArgumentParser("Interface for merging LLMs")
