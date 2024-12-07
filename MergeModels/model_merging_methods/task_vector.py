@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 
-from utils.utils import get_param_names_to_merge
+from ..utils.utils import get_param_names_to_merge
 
 
 class TaskVector:
