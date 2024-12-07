@@ -10,7 +10,8 @@ argparser.add_argument("--mmlu_prompt_type", type=str, default="plain", help="Pr
 argparser.add_argument("--mmlu_choices", type=str, default="letter", help="Choices for MMLU benchmark. Default: letter. one of [letter, number]")
 argparser.add_argument("--data_dir", type=str, default="Data", help="Data directory. Default: Data")
 argparser.add_argument("--mmlu_n_examples", type=int, default=None, help="Number of examples to use for MMLU. Default: None(All)")
-argparser.add_argument("--math_benchmarks", type=str, default="math,gsm8k,math_oai,gsm_hard", help="Math benchmarks directory. Default: Data")
+argparser.add_argument("--math_benchmarks", type=str, default="math,gsm8k,math_oai,gsm_hard", help="Math benchmarks directory. Default: gsm8k,math_oai,gsm_hard")
+argparser.add_argument("--code_benchmarks", type=str, default="mbpp", help="Math benchmarks directory. Default: mbpp. could be mbpp, humaneval")
 argparser.add_argument("--math_prompt_type", type=str, default="tora", help="Prompt type for Math benchmarks. Default: tora")
 argparser.add_argument("--math_max_tokens", type=int, default=1024, help="Max tokens for Math benchmarks. Default: 1024")
 argparser.add_argument("--save_path", type=str, default="results", help="Save path for results. Default: results, File name will be automatically generated")
@@ -38,6 +39,15 @@ for benchmark in math_benchmarks:
     print(f"running {benchmark} benchmark ...")
     math_results[benchmark] = run_math_benchmark(model, benchmark, args.math_prompt_type, data_dir=args.data_dir, max_tokens_per_call=args.math_max_tokens)
 
+
+#run code benchamrks
+code_benchmarks = args.code_benchmarks.split(",")
+for benchmark in code_benchmarks:
+    print(f"running {benchmark} benchmark ...")
+    math_results[benchmark] = run_code_test(model, benchmark)
+
+math_results["mmlu"] = mmlu_results
+
 # save results
 print("saving results ...")
 
@@ -46,7 +56,7 @@ while True:
     save_path = os.path.join(args.save_path, f"{model_safe}_{uuid.uuid4()}.json")
     if not os.path.exists(save_path):
         break
-math_results["mmlu"] = mmlu_results
+
 
 with open(save_path, "w") as f:
     json.dump(math_results, f)
