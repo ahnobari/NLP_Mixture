@@ -145,3 +145,8 @@ Data/*
 merged_models/
 
 results/
+
+*safetensors*
+*config.json
+*_map.json
+*tokenizer.json

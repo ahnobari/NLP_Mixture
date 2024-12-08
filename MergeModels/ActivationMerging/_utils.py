@@ -10,9 +10,10 @@ import logging
 from copy import deepcopy
 
 
-def get_calib_dataset(tokenizer=None, n_samples=256, block_size=512):
-    dataset = load_dataset("mit-han-lab/pile-val-backup", split="validation")
-    dataset = dataset.shuffle(seed=42)
+def get_calib_dataset(tokenizer=None, n_samples=256, block_size=512, dataset=None):
+    if dataset is None:
+        dataset = load_dataset("mit-han-lab/pile-val-backup", split="validation")
+        dataset = dataset.shuffle(seed=42)
     samples = []
     n_run = 0
     for data in dataset:
@@ -36,7 +37,7 @@ def get_calib_dataset(tokenizer=None, n_samples=256, block_size=512):
     return [cat_samples[:, i*block_size:(i+1)*block_size] for i in range(n_split)]
 
 @torch.no_grad()
-def get_calib_feat(model, tokenizer):
+def get_calib_feat(model, tokenizer, dataset=None):
     input_dict = dict()
     def stat_input_max_hook(m, x, y, name):
         if isinstance(x, tuple):
@@ -56,7 +57,7 @@ def get_calib_feat(model, tokenizer):
 
     device = model.device
 
-    samples = get_calib_dataset(tokenizer)
+    samples = get_calib_dataset(tokenizer, dataset=dataset)
     pbar = tqdm(samples)
     for input_ids in pbar:
         input_ids = input_ids.to(device)
@@ -71,7 +72,7 @@ def get_calib_feat(model, tokenizer):
     return input_dict
 
 @torch.no_grad()
-def merge(finetuned_model_names, pretrained_model_name, topk=0.05, scaling=1.5, **kwargs):
+def merge(finetuned_model_names, pretrained_model_name, top_k=0.05, gamma=1.5, **kwargs):
 
     print('loading models...')
     models_to_merge, finetuned_tokenizers, finetuned_configs = [], [], []
@@ -98,17 +99,21 @@ def merge(finetuned_model_names, pretrained_model_name, topk=0.05, scaling=1.5, 
                                     pretrained_config=pretrained_config, finetuned_models=models_to_merge,
                                     finetuned_tokenizers=finetuned_tokenizers, finetuned_configs=finetuned_configs, logger=logger)
     
+    print('loading calibration dataset...')
+    dataset = load_dataset("mit-han-lab/pile-val-backup", split="validation")
+    dataset = dataset.shuffle(seed=42)
+    
     print('getting calibration features...')
     scale_dicts = []
     for i in range(len(models_to_merge)):
         model = models_to_merge[i].to('cuda')
         tokenizer = finetuned_tokenizers[i]
-        scale_dict = get_calib_feat(model, tokenizer)
+        scale_dict = get_calib_feat(model, tokenizer, dataset)
         scale_dicts.append(scale_dict)
         model = model.to('cpu')
     
     pretrained_model = pretrained_model.to('cuda')
-    pretrained_scale_dict = get_calib_feat(pretrained_model, pretrained_tokenizer)
+    pretrained_scale_dict = get_calib_feat(pretrained_model, pretrained_tokenizer, dataset)
     pretrained_model = pretrained_model.to('cpu')
     
     layer_mapping_dicts = []
@@ -123,27 +128,30 @@ def merge(finetuned_model_names, pretrained_model_name, topk=0.05, scaling=1.5, 
     for name, param in pretrained_model.named_modules():
         if isinstance(param, nn.Linear):
             pretrained_layer_mapping_dict[name] = param
-    
-    
-    merged_model = deepcopy(pretrained_model)
-    merged_layer_mapping_dict = {}
-    for name, param in pretrained_model.named_modules():
-        if isinstance(param, nn.Linear):
-            merged_layer_mapping_dict[name] = param
+            
     print('merging models...')
-    # make a copy of the pretrained model
+    final_weight_dict = {}
+
     for name, param in tqdm(pretrained_layer_mapping_dict.items(), total=len(pretrained_layer_mapping_dict)):
         base_importance = torch.softmax(pretrained_scale_dict[name],dim=0)
         base_importance = base_importance / base_importance.max()
-        topk = torch.topk(base_importance, int(base_importance.numel() * topk)).indices
-        important_clone = param.weight[:,topk].clone()
+        topk = torch.topk(base_importance, int(base_importance.numel() * top_k)).indices
+        important_clone = param.weight.data[:,topk].clone()
+        final_weight_dict[name] = param.weight.data.clone()
         for i in range(len(models_to_merge)):
             scale_dict = scale_dicts[i]
             layer_mapping_dict = layer_mapping_dicts[i]
             scale = torch.softmax(scale_dict[name],dim=0)
             scale = scale / scale.max()
-            delta = layer_mapping_dicts[i][name].weight - pretrained_layer_mapping_dict[name].weight
+            delta = layer_mapping_dict[name].weight.data - pretrained_layer_mapping_dict[name].weight.data
             delta = delta * scale[None, :]
-            merged_layer_mapping_dict[name].weight.data += delta*scaling
-        merged_layer_mapping_dict[name].weight[:,topk].data = important_clone
+            final_weight_dict[name] += delta*gamma
+
+        final_weight_dict[name][:,topk] = important_clone
+        
+    merged_model = deepcopy(pretrained_model)
+    for name, mod in merged_model.named_modules():
+        if isinstance(mod, nn.Linear):
+            mod.weight.data = final_weight_dict[name]
+    
     return merged_model, pretrained_tokenizer

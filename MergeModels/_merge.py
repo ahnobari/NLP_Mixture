@@ -5,6 +5,7 @@ from .model_merging_methods.merging_methods import MergingMethod
 from .utils.utils import set_random_seed, align_tokenizers_and_embeddings
 from .utils.load_config import cache_dir
 from copy import deepcopy
+import torch
 
 DEFAULTS = {
 #    "merging_method_name": "average_merging",
@@ -33,7 +34,7 @@ def merge_models(pretrained_model_name: str, models_to_merge: list, finetuned_to
     :param merging_method: MergingMethod, the mering method÷
     :return:
     """
-    pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=pretrained_model_name)
+    pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=pretrained_model_name, torch_dtype=torch.bfloat16)
     pretrained_tokenizer = AutoTokenizer.from_pretrained(pretrained_model_name_or_path=pretrained_model_name)
     pretrained_config = AutoConfig.from_pretrained(pretrained_model_name_or_path=pretrained_model_name)
 
@@ -80,7 +81,7 @@ def merge(finetuned_model_names, pretrained_model_name, merging_method_name, **k
     models_to_merge, finetuned_tokenizers, finetuned_configs = [], [], []
     for finetuned_model_name in finetuned_model_names:
         try:
-            finetuned_model = AutoModelForCausalLM.from_pretrained(finetuned_model_name, device_map='cpu')
+            finetuned_model = AutoModelForCausalLM.from_pretrained(finetuned_model_name, device_map='cpu', torch_dtype=torch.bfloat16)
             finetuned_tokenizer = AutoTokenizer.from_pretrained(finetuned_model_name)
             finetuned_config = AutoConfig.from_pretrained(finetuned_model_name)
             models_to_merge.append(finetuned_model)
