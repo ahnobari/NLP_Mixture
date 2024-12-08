@@ -16,7 +16,7 @@ Checkpoints:
   - 5:
     - HF_Repo: "tohur/natsumura-assistant-1.1-llama-3.1-8b"
   - 6:
-    - HF_Repo: "Syed-Hasan-8503/Llama-3.1-8b-BAdam"
+    - HF_Repo: "Syed-Hasan-8503/Llama-3.1-8b-BAdam" #
   - 7:
     - HF_Repo: "yitzshapiro/brochat-meta-llama-31-8b"
   - 8:
@@ -30,4 +30,4 @@ Checkpoints:
   - 12:
     - HF_Repo: "rishitdass/Youtube-Video-Summarizer"
   - 13:
-    - HF_Repo: "passthepizza/NarrativAI-Reflection"
+    - HF_Repo: "passthepizza/NarrativAI-Reflection" 

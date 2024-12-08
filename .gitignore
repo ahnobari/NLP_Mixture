@@ -141,3 +141,7 @@ Data/*
 !Data/*.py
 
 *_exp*
+
+merged_models/
+
+results/

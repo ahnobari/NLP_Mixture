@@ -1,19 +1,13 @@
 import logging
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 
-<<<<<<< HEAD
 from .model_merging_methods.merging_methods import MergingMethod
 from .utils.utils import set_random_seed, align_tokenizers_and_embeddings
 from .utils.load_config import cache_dir
-=======
-from model_merging_methods.merging_methods import MergingMethod
-from utils.utils import set_random_seed, align_tokenizers_and_embeddings
-from utils.load_config import cache_dir
 from copy import deepcopy
->>>>>>> 8d86f86a0040eef19107486c30c197c1aa8cf941
 
 DEFAULTS = {
-    "merging_method_name": "average_merging",
+#    "merging_method_name": "average_merging",
     "scaling_coefficient": 1.0,
     "slerp_t": 0.5,
     "dot_threshold": 0.9995,
@@ -36,7 +30,7 @@ def merge_models(pretrained_model_name: str, models_to_merge: list, finetuned_to
     :param finetuned_tokenizers: list of finetuned tokenizers
     :param finetuned_configs: list of finetuned configs
     :param logger: Logger, logger
-    :param merging_method: MergingMethod, the mering method
+    :param merging_method: MergingMethod, the mering method÷
     :return:
     """
     pretrained_model = AutoModelForCausalLM.from_pretrained(pretrained_model_name_or_path=pretrained_model_name)
@@ -50,23 +44,51 @@ def merge_models(pretrained_model_name: str, models_to_merge: list, finetuned_to
 
     # set random seed to guarantee reproducibility
     set_random_seed(seed=0)
+    # merged_model = merging_method.get_merged_model(merged_model=pretrained_model,
+    #                                                models_to_merge=models_to_merge,
+    #                                                exclude_param_names_regex=[],
+    #                                                scaling_coefficient=kwargs['scaling_coefficient'],
+    #                                                slerp_t=kwargs['slerp_t'],
+    #                                                dot_threshold=kwargs['dot_threshold'],
+    #                                                param_density=kwargs['param_density'],
+    #                                                param_value_mask_rate=kwargs['param_value_mask_rate'],
+    #                                                weight_format=kwargs['weight_format'],
+    #                                                weight_mask_rates=kwargs['weight_mask_rates'],
+    #                                                use_weight_rescale=kwargs['use_weight_rescale'],
+    #                                                mask_strategy=kwargs['mask_strategy'],
+    #                                                mask_apply_method=kwargs['mask_apply_method'],
+    #                                                above_average_value_ratio=kwargs['above_average_value_ratio'],
+    #                                                score_calibration_value=kwargs['score_calibration_value'])
+
     merged_model = merging_method.get_merged_model(merged_model=pretrained_model,
                                                    models_to_merge=models_to_merge,
-                                                   exclude_param_names_regex=[],
-                                                   **kwargs)
+                                                    exclude_param_names_regex=[], **kwargs)
     
-    return merged_model
 
-def merge(finetuned_model_names, pretrained_model_name, merging_method, **kwargs):
+    #save_model_name = f"{merging_method}_{'_'.join(models_to_merge)}_{pretrained_model_name}"
+    #save_model_path = f"./merged_llms/{pretrained_model_name}/{'_'.join(models_to_merge)}/{save_model_name}"
+    #logger.info(f"Saving merged models at {save_model_path}...")
+    #merged_model.save_pretrained(save_directory=save_model_path)
+    #pretrained_tokenizer.save_pretrained(save_directory=save_model_path)
+    
+    #logger.info(f"Merging of {'_'.join(models_to_merge)} with method {merging_method} is completed.")
+
+    return merged_model, pretrained_tokenizer
+
+def merge(finetuned_model_names, pretrained_model_name, merging_method_name, **kwargs):
 
     models_to_merge, finetuned_tokenizers, finetuned_configs = [], [], []
     for finetuned_model_name in finetuned_model_names:
-        finetuned_model = AutoModelForCausalLM.from_pretrained(finetuned_model_name, device_map='cpu')
-        finetuned_tokenizer = AutoTokenizer.from_pretrained(finetuned_model_name)
-        finetuned_config = AutoConfig.from_pretrained(finetuned_model_name)
-        models_to_merge.append(finetuned_model)
-        finetuned_tokenizers.append(finetuned_tokenizer)
-        finetuned_configs.append(finetuned_config)
+        try:
+            finetuned_model = AutoModelForCausalLM.from_pretrained(finetuned_model_name, device_map='cpu')
+            finetuned_tokenizer = AutoTokenizer.from_pretrained(finetuned_model_name)
+            finetuned_config = AutoConfig.from_pretrained(finetuned_model_name)
+            models_to_merge.append(finetuned_model)
+            finetuned_tokenizers.append(finetuned_tokenizer)
+            finetuned_configs.append(finetuned_config)
+        except Exception as e:
+            print(f"Model {finetuned_model_name} could not be loaded.")
+            print(f"Reason: {e}")
 
     args = deepcopy(DEFAULTS)
 
@@ -74,9 +96,13 @@ def merge(finetuned_model_names, pretrained_model_name, merging_method, **kwargs
     logger = logging.getLogger(__name__)
 
     if 'weight_mask_rates' not in kwargs:
-        args['weight_mask_rates'] = [args.weight_mask_rate for _ in range(len(finetuned_model_names))]
+        args['weight_mask_rates'] = [args['weight_mask_rate'] for _ in range(len(finetuned_model_names))]
+
+    merging_method = MergingMethod(merging_method_name=merging_method_name)
+
+    args['merging_method_name'] = merging_method_name
 
     merged = merge_models(pretrained_model_name, models_to_merge=models_to_merge, finetuned_tokenizers=finetuned_tokenizers,
                         finetuned_configs=finetuned_configs, logger=logger, merging_method=merging_method, **args, **kwargs)
-    
+
     return merged

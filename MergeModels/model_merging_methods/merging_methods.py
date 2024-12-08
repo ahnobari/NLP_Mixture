@@ -686,7 +686,7 @@ class MergingMethod:
     def get_merged_model(self, merged_model: nn.Module, models_to_merge: list, exclude_param_names_regex: list, scaling_coefficient: float = 1.0,
                          slerp_t: float = 0.5, dot_threshold: float = 0.9995, param_density: float = 0.9, param_value_mask_rate: float = 0.8,
                          weight_format: str = "delta_weight", weight_mask_rates: list = None, use_weight_rescale: bool = True, mask_strategy: str = "random",
-                         mask_apply_method: str = "average_merging", above_average_value_ratio: float = 1.0, score_calibration_value: float = 1.0):
+                         mask_apply_method: str = "average_merging", above_average_value_ratio: float = 1.0, score_calibration_value: float = 1.0, **kwargs):
         """
         merge the parameters of models_to_merge to merged_model
         :param merged_model: nn.Module, the merged model
