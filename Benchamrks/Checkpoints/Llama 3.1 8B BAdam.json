@@ -1,0 +1,107 @@
+{
+    "math": {
+        "num_samples": 5000,
+        "num_scores": 5000,
+        "timeout_samples": 0,
+        "empty_samples": 191,
+        "acc": 5.7,
+        "type_acc": {
+            "Algebra": 8.3,
+            "Counting & Probability": 3.4,
+            "Geometry": 3.3,
+            "Intermediate Algebra": 3.5,
+            "Number Theory": 5.0,
+            "Prealgebra": 9.3,
+            "Precalculus": 2.9
+        }
+    },
+    "gsm8k": {
+        "num_samples": 1319,
+        "num_scores": 1319,
+        "timeout_samples": 0,
+        "empty_samples": 19,
+        "acc": 14.3
+    },
+    "math_oai": {
+        "num_samples": 500,
+        "num_scores": 500,
+        "timeout_samples": 0,
+        "empty_samples": 21,
+        "acc": 5.2
+    },
+    "gsm_hard": {
+        "num_samples": 1319,
+        "num_scores": 1319,
+        "timeout_samples": 0,
+        "empty_samples": 16,
+        "acc": 7.7
+    },
+    "mbpp": {
+        "base": {
+            "pass@1": 0.25925925925925924
+        },
+        "+": {
+            "pass@1": 0.21693121693121692
+        }
+    },
+    "mmlu": {
+        "abstract_algebra": 0.27,
+        "anatomy": 0.26666666666666666,
+        "astronomy": 0.29605263157894735,
+        "business_ethics": 0.27,
+        "clinical_knowledge": 0.3433962264150943,
+        "college_biology": 0.2847222222222222,
+        "college_chemistry": 0.3,
+        "college_computer_science": 0.31,
+        "college_mathematics": 0.26,
+        "college_medicine": 0.3468208092485549,
+        "college_physics": 0.24509803921568626,
+        "computer_security": 0.36,
+        "conceptual_physics": 0.2936170212765957,
+        "econometrics": 0.23684210526315788,
+        "electrical_engineering": 0.33793103448275863,
+        "elementary_mathematics": 0.2037037037037037,
+        "formal_logic": 0.29365079365079366,
+        "global_facts": 0.19,
+        "high_school_biology": 0.2838709677419355,
+        "high_school_chemistry": 0.20689655172413793,
+        "high_school_computer_science": 0.27,
+        "high_school_european_history": 0.21212121212121213,
+        "high_school_geography": 0.30808080808080807,
+        "high_school_government_and_politics": 0.33678756476683935,
+        "high_school_macroeconomics": 0.32564102564102565,
+        "high_school_mathematics": 0.23333333333333334,
+        "high_school_microeconomics": 0.25210084033613445,
+        "high_school_physics": 0.23841059602649006,
+        "high_school_psychology": 0.3486238532110092,
+        "high_school_statistics": 0.39814814814814814,
+        "high_school_us_history": 0.28431372549019607,
+        "high_school_world_history": 0.32489451476793246,
+        "human_aging": 0.25112107623318386,
+        "human_sexuality": 0.33587786259541985,
+        "international_law": 0.371900826446281,
+        "jurisprudence": 0.3425925925925926,
+        "logical_fallacies": 0.2883435582822086,
+        "machine_learning": 0.32142857142857145,
+        "management": 0.34951456310679613,
+        "marketing": 0.31196581196581197,
+        "medical_genetics": 0.27,
+        "miscellaneous": 0.33588761174968074,
+        "moral_disputes": 0.30057803468208094,
+        "moral_scenarios": 0.23687150837988827,
+        "nutrition": 0.38562091503267976,
+        "philosophy": 0.3536977491961415,
+        "prehistory": 0.2623456790123457,
+        "professional_accounting": 0.26595744680851063,
+        "professional_law": 0.2777053455019557,
+        "professional_medicine": 0.23897058823529413,
+        "professional_psychology": 0.24836601307189543,
+        "public_relations": 0.3,
+        "security_studies": 0.3877551020408163,
+        "sociology": 0.31840796019900497,
+        "us_foreign_policy": 0.52,
+        "virology": 0.30120481927710846,
+        "world_religions": 0.2982456140350877,
+        "overall": 0.2936903574989318
+    }
+}

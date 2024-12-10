@@ -50,7 +50,7 @@ def get_calib_feat(model, tokenizer, dataset=None):
 
     hooks = []
     for name, m in model.named_modules():
-        if isinstance(m, nn.Linear):
+        if hasattr(m, "weight") and "embed" not in name:
             hooks.append(
                 m.register_forward_hook(
                     partial(stat_input_max_hook, name=name)))
@@ -72,7 +72,7 @@ def get_calib_feat(model, tokenizer, dataset=None):
     return input_dict
 
 @torch.no_grad()
-def merge(finetuned_model_names, pretrained_model_name, top_k=0.05, gamma=1.5, **kwargs):
+def merge(finetuned_model_names, pretrained_model_name, lamb = 0.2 , omega = 0.2, **kwargs):
 
     print('loading models...')
     models_to_merge, finetuned_tokenizers, finetuned_configs = [], [], []
@@ -104,14 +104,6 @@ def merge(finetuned_model_names, pretrained_model_name, top_k=0.05, gamma=1.5, *
     dataset = dataset.shuffle(seed=42)
     
     print('getting calibration features...')
-    scale_dicts = []
-    for i in range(len(models_to_merge)):
-        model = models_to_merge[i].to('cuda')
-        tokenizer = finetuned_tokenizers[i]
-        scale_dict = get_calib_feat(model, tokenizer, dataset)
-        scale_dicts.append(scale_dict)
-        model = model.to('cpu')
-    
     pretrained_model = pretrained_model.to('cuda')
     pretrained_scale_dict = get_calib_feat(pretrained_model, pretrained_tokenizer, dataset)
     pretrained_model = pretrained_model.to('cpu')
@@ -120,38 +112,53 @@ def merge(finetuned_model_names, pretrained_model_name, top_k=0.05, gamma=1.5, *
     for i in range(len(models_to_merge)):
         layer_mapping_dict = {}
         for name, param in models_to_merge[i].named_modules():
-            if isinstance(param, nn.Linear):
+            if hasattr(param, 'weight') and 'embed' not in name:
                 layer_mapping_dict[name] = param
         layer_mapping_dicts.append(layer_mapping_dict)
     
     pretrained_layer_mapping_dict = {}
     for name, param in pretrained_model.named_modules():
-        if isinstance(param, nn.Linear):
+        if hasattr(param, 'weight') and 'embed' not in name:
             pretrained_layer_mapping_dict[name] = param
             
     print('merging models...')
     final_weight_dict = {}
-
+    for name, mod in pretrained_model.named_modules():
+        if hasattr(mod, 'weight') and 'embed' in name:
+            final_weight_dict[name] = mod.weight.data.clone()
+            for i in range(len(models_to_merge)):
+                for name_, mod_ in models_to_merge[i].named_modules():
+                    if name_ == name:
+                        delta = mod_.weight.data - mod.weight.data
+                        final_weight_dict[name] += delta
+                        
     for name, param in tqdm(pretrained_layer_mapping_dict.items(), total=len(pretrained_layer_mapping_dict)):
-        base_importance = torch.softmax(pretrained_scale_dict[name],dim=0)
-        base_importance = base_importance / base_importance.max()
-        topk = torch.topk(base_importance, int(base_importance.numel() * top_k)).indices
-        important_clone = param.weight.data[:,topk].clone()
         final_weight_dict[name] = param.weight.data.clone()
         for i in range(len(models_to_merge)):
-            scale_dict = scale_dicts[i]
             layer_mapping_dict = layer_mapping_dicts[i]
-            scale = torch.softmax(scale_dict[name],dim=0)
-            scale = scale / scale.max()
             delta = layer_mapping_dict[name].weight.data - pretrained_layer_mapping_dict[name].weight.data
-            delta = delta * scale[None, :]
-            final_weight_dict[name] += delta*gamma
-
-        final_weight_dict[name][:,topk] = important_clone
+            
+            final_weight_dict[name] += delta
+    
+    for name, param in tqdm(pretrained_layer_mapping_dict.items(), total=len(pretrained_layer_mapping_dict)):
+        base_importance = torch.abs(pretrained_scale_dict[name])
+        base_importance = base_importance / torch.max(base_importance)
+        
+        total_delta = final_weight_dict[name] - pretrained_layer_mapping_dict[name].weight.data
+        
+        relaxation_factor = 1 - (base_importance * (1 - omega))
+        delta_final = total_delta * relaxation_factor * lamb
+        
+        final_weight_dict[name] = (pretrained_layer_mapping_dict[name].weight.data + delta_final).to(torch.bfloat16)
         
     merged_model = deepcopy(pretrained_model)
-    for name, mod in merged_model.named_modules():
-        if isinstance(mod, nn.Linear):
+    
+    for name, mod in tqdm(merged_model.named_modules()):
+        if name in final_weight_dict:
+            if torch.allclose(mod.weight.data, final_weight_dict[name]):
+                print(f'{name} has not changed')
             mod.weight.data = final_weight_dict[name]
+        elif hasattr(mod, 'weight'):
+            print(f'{name} not in final_weight_dict')
     
     return merged_model, pretrained_tokenizer
